@@ -33,6 +33,7 @@ class Raja(CMakePackage, CudaPackage, ROCmPackage):
     variant('shared', default=True, description='Build Shared Libs')
     variant('examples', default=True, description='Build examples.')
     variant('exercises', default=True, description='Build exercises.')
+
     # TODO: figure out gtest dependency and then set this default True
     # and remove the +tests conflict below.
     variant('tests', default=False, description='Build tests')
