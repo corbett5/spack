@@ -52,6 +52,8 @@ class PyScipy(PythonPackage):
     version('0.15.1', sha256='a212cbc3b79e9a563aa45fc5c517b3499198bd7eb7e7be1e047568a5f48c259a')
     version('0.15.0', sha256='0c74e31e08acc8bf9b6ceb9bced73df2ae0cc76003e0366350bc7b26292bf8b1')
 
+    variant('force-parallel-build', default=False, description='Force a parallel build, may break with Python 3.')
+
     depends_on('python@2.6:2.8,3.2:', type=('build', 'link', 'run'))
     depends_on('python@2.7:2.8,3.4:', when='@0.18:', type=('build', 'link', 'run'))
     depends_on('python@3.5:', when='@1.3:', type=('build', 'link', 'run'))
@@ -77,6 +79,8 @@ class PyScipy(PythonPackage):
     patch('https://git.sagemath.org/sage.git/plain/build/pkgs/scipy/patches/extern_decls.patch?id=711fe05025795e44b84233e065d240859ccae5bd',
           sha256='5433f60831cb554101520a8f8871ac5a32c95f7a971ccd68b69049535b106780', when='@1.2:1.5.3')
 
+    patch('scipy-clang.patch', when='%clang')
+
     def setup_build_environment(self, env):
         # https://github.com/scipy/scipy/issues/9080
         env.set('F90', spack_fc)
@@ -84,6 +88,13 @@ class PyScipy(PythonPackage):
         # https://github.com/scipy/scipy/issues/11611
         if self.spec.satisfies('@:1.4 %gcc@10:'):
             env.set('FFLAGS', '-fallow-argument-mismatch')
+
+        # Build in parallel
+        # Known problems with Python 3.5+
+        # https://github.com/spack/spack/issues/7927
+        # https://github.com/scipy/scipy/issues/7112
+        if not self.spec.satisfies('^python@3.5:') or '+force-parallel-build' in self.spec:
+            env.set('NPY_NUM_BUILD_JOBS', str(make_jobs))
 
     def build_args(self, spec, prefix):
         args = []
@@ -94,7 +105,7 @@ class PyScipy(PythonPackage):
         # Known problems with Python 3.5+
         # https://github.com/spack/spack/issues/7927
         # https://github.com/scipy/scipy/issues/7112
-        if not spec.satisfies('^python@3.5:'):
+        if not spec.satisfies('^python@3.5:') or '+force-parallel-build' in spec:
             args.extend(['-j', str(make_jobs)])
 
         return args

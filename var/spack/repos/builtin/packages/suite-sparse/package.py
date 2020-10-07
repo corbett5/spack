@@ -35,8 +35,24 @@ class SuiteSparse(Package):
     variant('cuda', default=False, description='Build with CUDA')
     variant('openmp', default=False, description='Build with OpenMP')
 
+    variant('klu', default=False, description='Build KLU.')
+    variant('btf', default=False, description='Build BTF.')
+    variant('umfpack', default=False, description='Build UMFPACK.')
+    variant('cholmod', default=False, description='Build CHOLMOD.')
+    variant('colamd', default=False, description='Build COLAMD.')
+    variant('amd', default=False, description='Build AMD.')
+    variant('camd', default=False, description='Build CAMD.')
+    variant('ccolamd', default=False, description='Build CCOLAMD.')
+    variant('csparse', default=False, description='Build CSparse.')
+    variant('cxsparse', default=False, description='Build CXSparse.')
+    variant('rbio', default=False, description='Build RBio.')
+    variant('spqr', default=False, description='Build SPQR.')
+
+    variant('blas-no-underscore', default=False, description='Force no underscore for BLAS and LAPACK libs.')
+
     depends_on('mpfr', type=('build', 'link'), when='@5.8.0:')
     depends_on('gmp', type=('build', 'link'), when='@5.8.0:')
+    
     depends_on('blas')
     depends_on('lapack')
     depends_on('m4', type='build', when='@5.0.0:')
@@ -60,6 +76,12 @@ class SuiteSparse(Package):
     patch('graphblas_libm_dep.patch', when='@5.2.0:5.2.99%clang')
 
     conflicts('%gcc@:4.8', when='@5.2.0:', msg='gcc version must be at least 4.9 for suite-sparse@5.2.0:')
+    conflicts('+cholmod~amd', msg='CHOLMOD depends on AMD.')
+    conflicts('+cholmod~camd', msg='CHOLMOD depends on CAMD.')
+    conflicts('+cholmod~colamd', msg='CHOLMOD depends on COLAMD.')
+    conflicts('+cholmod~ccolamd', msg='CHOLMOD depends on CCOLAMD.')
+
+    conflicts('+umfpack~cholmod', msg='UMFPACK depends on cholmod')
 
     def install(self, spec, prefix):
         # The build system of SuiteSparse is quite old-fashioned.
@@ -125,7 +147,7 @@ class SuiteSparse(Package):
         elif '%pgi' in spec:
             make_args += ['CFLAGS+=--exceptions']
 
-        if spack_f77.endswith('xlf') or spack_f77.endswith('xlf_r'):
+        if '+blas-no-underscore' in spec or spack_f77.endswith('xlf') or spack_f77.endswith('xlf_r'):
             make_args += ['CFLAGS+=-DBLAS_NO_UNDERSCORE']
 
         # Intel TBB in SuiteSparseQR
@@ -143,14 +165,35 @@ class SuiteSparse(Package):
                 'CMAKE_OPTIONS=-DCMAKE_INSTALL_PREFIX=%s' % prefix +
                 ' -DCMAKE_LIBRARY_PATH=%s' % prefix.lib]
 
+        make_args.append('INSTALL=%s' % prefix)
+
+        libraries = (('SuiteSparse_config', True),
+                     ('SPQR', '+spqr' in spec),
+                     ('RBio', '+rbio' in spec),
+                     ('CSparse', '+csparse' in spec),
+                     ('CXSparse', '+cxsparse' in spec),
+                     ('CCOLAMD', '+ccolamd' in spec),
+                     ('CAMD', '+camd' in spec),
+                     ('AMD', '+amd' in spec),
+                     ('COLAMD', '+colamd' in spec),
+                     ('CHOLMOD', '+cholmod' in spec),
+                     ('UMFPACK', '+umfpack' in spec),
+                     ('BTF', '+btf' in spec),
+                     ('KLU', '+klu' in spec))
+
         # In those SuiteSparse versions calling "make install" in one go is
         # not possible, mainly because of GraphBLAS.  Thus compile first and
         # install in a second run.
-        if '@5.4.0:' in self.spec:
-            make('library', *make_args)
+        for directory, shouldBuild in libraries:
+            if shouldBuild:
+                with working_dir(directory):
+                    if '@5.4.0:' in self.spec:
+                        make('library', *make_args)
 
-        make_args.append('INSTALL=%s' % prefix)
-        make('install', *make_args)
+        for directory, shouldBuild in libraries:
+            if shouldBuild:
+                with working_dir(directory):
+                    make('install', *make_args)
 
     @run_after('install')
     def fix_darwin_install(self):

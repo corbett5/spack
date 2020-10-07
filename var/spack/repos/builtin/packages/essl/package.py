@@ -5,11 +5,10 @@
 
 from spack import *
 
-
 class Essl(Package):
     """IBM's Engineering and Scientific Subroutine Library (ESSL)."""
 
-    homepage = "https://www.ibm.com/systems/power/software/essl/"
+    # homepage = "https://www.ibm.com/systems/power/software/essl/"
 
     variant('ilp64', default=False, description='64 bit integers')
     variant(
@@ -19,8 +18,12 @@ class Essl(Package):
         multi=False
     )
     variant('cuda', default=False, description='CUDA acceleration')
+    variant('lapack', default=False, description='Support lapack interface.')
+
+    depends_on('cuda', when='+cuda')
 
     provides('blas')
+    provides('lapack', when='+lapack')
 
     conflicts('+cuda', when='+ilp64',
               msg='ESSL+cuda+ilp64 cannot combine CUDA acceleration'
@@ -33,7 +36,6 @@ class Essl(Package):
     @property
     def blas_libs(self):
         spec = self.spec
-        prefix = self.prefix
 
         if '+ilp64' in spec:
             essl_lib = ['libessl6464']
@@ -51,14 +53,51 @@ class Essl(Package):
                     else:
                         essl_lib = ['libesslsmp']
 
-        essl_root = prefix.lib64
         essl_libs = find_libraries(
             essl_lib,
-            root=essl_root,
+            root=self.prefix.lib64,
             shared=True
         )
 
+        if '+cuda' in spec:
+            essl_libs += ['/usr/tce/packages/cuda/cuda-10.1.243/lib64/libcublas.so',
+                          '/usr/tce/packages/cuda/cuda-10.1.243/lib64/libcudart.so']
+            # essl_libs += spec['cuda'].libs
+
+        if spec.satisfies('threads=openmp'):
+            if '%gcc' in self.spec:
+                gcc = Executable(self.compiler.cc)
+                omp_lib_path = gcc('--print-file-name', 'libgomp.so', output=str)
+                omp_libs = LibraryList(omp_lib_path.strip())
+
+            elif '%clang' in self.spec:
+                clang = Executable(self.compiler.cc)
+                omp_lib_path = clang('--print-file-name', 'libomp.so', output=str)
+                omp_libs = LibraryList(omp_lib_path.strip())
+
+            essl_libs += omp_libs
+
         return essl_libs
+
+    @property
+    def lapack_libs(self):
+        essl_libs = self.blas_libs
+        essl_libs += find_libraries(
+              # ['liblapackforessl'],
+              ['liblapackforessl', 'liblapackforessl_'],
+              root=self.prefix.lib64,
+              shared=True
+        )
+
+        return essl_libs
+
+    @property
+    def libs(self):
+        result = self.blas_libs
+        if '+lapack' in self.spec:
+            result += self.lapack_libs
+
+        return result
 
     def install(self, spec, prefix):
         raise InstallError('IBM ESSL is not installable;'

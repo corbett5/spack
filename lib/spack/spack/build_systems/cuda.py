@@ -145,11 +145,11 @@ class CudaPackage(PackageBase):
     conflicts('%clang@5:', when='+cuda ^cuda@:9.1' + arch_platform)
     conflicts('%clang@6:', when='+cuda ^cuda@:9.2' + arch_platform)
     conflicts('%clang@7:', when='+cuda ^cuda@10.0.130' + arch_platform)
-    conflicts('%clang@7.1:', when='+cuda ^cuda@:10.1.105' + arch_platform)
-    conflicts('%clang@8.1:', when='+cuda ^cuda@:10.2.89' + arch_platform)
+    # conflicts('%clang@7.1:', when='+cuda ^cuda@:10.1.105' + arch_platform)
+    # conflicts('%clang@8.1:', when='+cuda ^cuda@:10.2.89' + arch_platform)
     conflicts('%clang@:5', when='+cuda ^cuda@11.0.2:' + arch_platform)
-    conflicts('%clang@10:', when='+cuda ^cuda@:11.0.2' + arch_platform)
-    conflicts('%clang@11:', when='+cuda ^cuda@:11.1.0' + arch_platform)
+    # conflicts('%clang@10:', when='+cuda ^cuda@:11.0.2' + arch_platform)
+    # conflicts('%clang@11:', when='+cuda ^cuda@:11.1.0' + arch_platform)
 
     # Intel is mostly relevant for x86_64 Linux, even though it also
     # exists for Mac OS X. No information prior to CUDA 3.2 or Intel 11.1

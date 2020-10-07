@@ -27,6 +27,7 @@ class Silo(AutotoolsPackage):
             description='Produce position-independent code (for shared libs)')
     variant('mpi', default=True,
             description='Compile with MPI Compatibility')
+    variant('zlib', default=True, description='Compile with zlib')
 
     depends_on('hdf5@:1.10.999', when='@:4.10.2')
     depends_on('hdf5~mpi', when='~mpi')
@@ -35,7 +36,7 @@ class Silo(AutotoolsPackage):
     depends_on('qt~framework@4.8:4.9', when='+silex')
     depends_on('libx11', when='+silex')
     depends_on('readline')
-    depends_on('zlib')
+    depends_on('zlib', when='+zlib')
 
     patch('remove-mpiposix.patch', when='@4.8:4.10.2')
 
@@ -93,13 +94,14 @@ class Silo(AutotoolsPackage):
         config_args = [
             '--with-hdf5=%s,%s' % (spec['hdf5'].prefix.include,
                                    spec['hdf5'].prefix.lib),
-            '--with-zlib=%s,%s' % (spec['zlib'].prefix.include,
-                                   spec['zlib'].prefix.lib),
             '--enable-install-lite-headers',
             '--enable-fortran' if '+fortran' in spec else '--disable-fortran',
             '--enable-silex' if '+silex' in spec else '--disable-silex',
             '--enable-shared' if '+shared' in spec else '--disable-shared',
         ]
+
+        if '+zlib' in spec:
+          config_args.extend(['--with-zlib=%s,%s' % (spec['zlib'].prefix.include, spec['zlib'].prefix.lib)])
 
         if '+silex' in spec:
             x = spec['libx11']
@@ -113,6 +115,7 @@ class Silo(AutotoolsPackage):
         if '+mpi' in spec:
             config_args.append('CC=%s' % spec['mpi'].mpicc)
             config_args.append('CXX=%s' % spec['mpi'].mpicxx)
-            config_args.append('FC=%s' % spec['mpi'].mpifc)
+            if '+fortran' in spec:
+                config_args.append('FC=%s' % spec['mpi'].mpifc)
 
         return config_args
