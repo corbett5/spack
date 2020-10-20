@@ -676,10 +676,16 @@ class IntelPackage(PackageBase):
             # product installation (as opposed to one being ghosted via
             # packages.yaml), specificially to provide the 'iomp5' libs.
 
-        elif '%gcc' in self.spec or '%clang' in self.spec:
+        elif '%gcc' in self.spec:
             gcc = Executable(self.compiler.cc)
             omp_lib_path = gcc(
                 '--print-file-name', 'libgomp.%s' % dso_suffix, output=str)
+            omp_libs = LibraryList(omp_lib_path.strip())
+
+        elif '%clang' in self.spec:
+            clang = Executable(self.compiler.cc)
+            omp_lib_path = clang(
+                '--print-file-name', 'libomp.%s' % dso_suffix, output=str)
             omp_libs = LibraryList(omp_lib_path.strip())
 
         if len(omp_libs) < 1:
