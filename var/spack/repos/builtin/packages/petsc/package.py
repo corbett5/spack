@@ -396,15 +396,17 @@ class Petsc(Package):
 
         # PETSc does not pick up SuperluDist from the dir as they look for
         # superlu_dist_4.1.a
-        if 'superlu-dist' in spec:
+        if '+superlu-dist' in spec:
+            import warnings
+            warnings.warn('spec["superlu-dist"].prefix.include = %s' % spec['superlu-dist'].prefix.include)
+            warnings.warn('spec["superlu-dist"].libs = %s' % spec['superlu-dist'].libs)
             if spec.satisfies('@3.10.3:'):
                 options.append('--with-cxx-dialect=C++11')
             options.extend([
                 '--with-superlu_dist-include=%s' %
                 spec['superlu-dist'].prefix.include,
                 '--with-superlu_dist-lib=%s' %
-                join_path(spec['superlu-dist'].prefix.lib,
-                          'libsuperlu_dist.a'),
+                spec['superlu-dist'].libs,
                 '--with-superlu_dist=1'
             ])
         else:
@@ -488,7 +490,7 @@ class Petsc(Package):
                     run.add_default_arg('-np')
                     run.add_default_arg('4')
                 run('ex50', '-da_grid_x', '4', '-da_grid_y', '4')
-                if 'superlu-dist' in spec:
+                if '+superlu-dist' in spec:
                     run('ex50',
                         '-da_grid_x', '4',
                         '-da_grid_y', '4',

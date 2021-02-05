@@ -18,6 +18,7 @@ class Umpire(CMakePackage, CudaPackage, ROCmPackage):
 
     version('develop', branch='develop', submodules='True')
     version('main', branch='main', submodules='True')
+    version('5.0.0', tag='v5.0.0', submodules='True')
     version('4.1.2', tag='v4.1.2', submodules='True')
     version('4.1.1', tag='v4.1.1', submodules='True')
     version('4.1.0', tag='v4.1.0', submodules='True')
@@ -53,7 +54,7 @@ class Umpire(CMakePackage, CudaPackage, ROCmPackage):
     variant('openmp', default=False, description='Build with OpenMP support')
     variant('deviceconst', default=False,
             description='Enables support for constant device memory')
-    variant('examples', default=False, description='Build Umpire Examples')
+    variant('examples', default=True, description='Build Umpire Examples')
     variant('tests', default='none', values=('none', 'basic', 'benchmarks'),
             multi=False, description='Tests to run')
 
