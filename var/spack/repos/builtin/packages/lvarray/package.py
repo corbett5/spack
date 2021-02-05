@@ -50,6 +50,7 @@ class Lvarray(CMakePackage, CudaPackage):
     variant('umpire', default=False, description='Build Umpire support')
     variant('chai', default=False, description='Build Chai support')
     variant('caliper', default=False, description='Build Caliper support')
+    variant('pylvarray', default=False, description='Build Python support')
     variant('tests', default=True, description='Build tests')
     variant('benchmarks', default=False, description='Build benchmarks')
     variant('examples', default=False, description='Build examples')
@@ -70,6 +71,11 @@ class Lvarray(CMakePackage, CudaPackage):
     depends_on('chai+raja+cuda', when='+chai+cuda')
 
     depends_on('caliper', when='+caliper')
+
+    depends_on('python +shared +pic', when='+pylvarray')
+    depends_on('py-numpy@1.19: +blas +lapack +force-parallel-build', when='+pylvarray')
+    depends_on('py-scipy@1.5.2: +force-parallel-build', when='+pylvarray')
+    depends_on('py-pip', when='+pylvarray')
 
     depends_on('doxygen@1.8.13:', when='+docs', type='build')
     depends_on('py-sphinx@1.6.3:', when='+docs', type='build')
@@ -116,16 +122,13 @@ class Lvarray(CMakePackage, CudaPackage):
         """
         This method creates a 'host-config' file that specifies
         all of the options used to configure and build Umpire.
-
         For more details about 'host-config' files see:
             http://software.llnl.gov/conduit/building.html
-
         Note:
           The `py_site_pkgs_dir` arg exists to allow a package that
           subclasses this package provide a specific site packages
           dir when calling this function. `py_site_pkgs_dir` should
           be an absolute path or `None`.
-
           This is necessary because the spack `site_packages_dir`
           var will not exist in the base class. For more details
           on this issue see: https://github.com/spack/spack/issues/6261
@@ -275,6 +278,15 @@ class Lvarray(CMakePackage, CudaPackage):
             cfg.write(cmake_cache_entry("CALIPER_DIR", caliper_dir))
         else:
             cfg.write(cmake_cache_option("ENABLE_CALIPER", False))
+
+        cfg.write('#{0}\n'.format('-' * 80))
+        cfg.write('# Python\n')
+        cfg.write('#{0}\n\n'.format('-' * 80))
+        if '+pylvarray' in spec:
+            cfg.write(cmake_cache_option('ENABLE_PYLVARRAY', True))
+            cfg.write(cmake_cache_entry('Python3_EXECUTABLE', os.path.join(spec['python'].prefix.bin, 'python3')))
+        else:
+            cfg.write(cmake_cache_option('ENABLE_PYLVARRAY', False))
 
         cfg.write("#{0}\n".format("-" * 80))
         cfg.write("# Documentation\n")

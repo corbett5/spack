@@ -78,6 +78,7 @@ class PyNumpy(PythonPackage):
 
     variant('blas',   default=True, description='Build with BLAS support')
     variant('lapack', default=True, description='Build with LAPACK support')
+    variant('force-parallel-build', default=False, description='Force a parallel build, may break with Python 3.')
 
     depends_on('python@2.7:2.8,3.4:', type=('build', 'link', 'run'))
     depends_on('python@2.7:2.8,3.5:', type=('build', 'link', 'run'), when='@1.16:')
@@ -206,7 +207,7 @@ class PyNumpy(PythonPackage):
                 # dynamically. From this perspective it is no different from
                 # throwing away RPATH's and using LD_LIBRARY_PATH throughout
                 # Spack.
-                f.write('libraries = {0}\n'.format('mkl_rt'))
+                f.write('libraries = {0}\n'.format(lapackblas_lib_names + ',mkl_avx2,mkl_def'))
                 write_library_dirs(f, lapackblas_lib_dirs)
                 f.write('include_dirs = {0}\n'.format(lapackblas_header_dirs))
 
@@ -216,7 +217,7 @@ class PyNumpy(PythonPackage):
                 write_library_dirs(f, blas_lib_dirs)
                 f.write('include_dirs = {0}\n'.format(blas_header_dirs))
 
-            if '^openblas' in spec:
+            if '^openblas' in spec or '^essl' in spec:
                 f.write('[openblas]\n')
                 f.write('libraries = {0}\n'.format(lapackblas_lib_names))
                 write_library_dirs(f, lapackblas_lib_dirs)
@@ -306,7 +307,7 @@ class PyNumpy(PythonPackage):
             # But Parallel build in Python 3.5+ is broken.  See:
             # https://github.com/spack/spack/issues/7927
             # https://github.com/scipy/scipy/issues/7112
-            if spec['python'].version < Version('3.5'):
+            if spec['python'].version < Version('3.5') or '+force-parallel-build' in spec:
                 args = ['-j', str(make_jobs)]
 
         return args
