@@ -16,6 +16,7 @@ class Chai(CMakePackage, CudaPackage):
 
     version('develop', branch='develop', submodules='True')
     version('master', branch='main', submodules='True')
+    version('2.2.0', tag='v2.2.0', submodules='True')
     version('2.1.1', tag='v2.1.1', submodules='True')
     version('2.1.0', tag='v2.1.0', submodules='True')
     version('2.0.0', tag='v2.0.0', submodules='True')
@@ -25,8 +26,8 @@ class Chai(CMakePackage, CudaPackage):
 
     variant('shared', default=True, description='Build Shared Libs')
     variant('raja', default=False, description='Build plugin for RAJA')
-    variant('benchmarks', default=True, description='Build benchmarks.')
-    variant('examples', default=True, description='Build examples.')
+    variant('benchmarks', default=False, description='Build benchmarks.')
+    variant('examples', default=False, description='Build examples.')
 
     depends_on('cmake@3.8:', type='build')
     depends_on('umpire')
