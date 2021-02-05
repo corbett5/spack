@@ -11,12 +11,15 @@ class Adiak(CMakePackage):
        to tools."""
 
     homepage = "https://github.com/LLNL/Adiak"
-    url      = "https://github.com/LLNL/Adiak/releases/download/v0.1/adiak-v0.1.1.tar.gz"
+    git      = "https://github.com/LLNL/Adiak.git"
+
+    version('master', branch='master', submodules='True')
+    version('0.2.1', tag='v0.2.1', submodules="True")
+    version('0.2.0', tag='v0.2.0', submodules="True")
+    version('0.1.1', tag='v0.1', submodules="True")
 
     variant('mpi', default=True, description='Build with MPI support')
     variant('shared', default=True, description='Build dynamic libraries')
-
-    version('0.1.1', sha256='438e4652e15e206cd0019423d829fd4f2329323ff0c8861d9586bae051d9624b')
 
     depends_on('mpi', when='+mpi')
 

@@ -20,6 +20,7 @@ class Hypre(Package):
     maintainers = ['ulrikeyang', 'osborn9', 'balay']
 
     version('develop', branch='master')
+    version('2.21.0', commit='2186a8fb343f84f109405eed3e298cb1a2615e95') # Note this is not the official release.
     version('2.20.0', sha256='5be77b28ddf945c92cde4b52a272d16fb5e9a7dc05e714fc5765948cba802c01')
     version('2.19.0', sha256='466b19d8a86c69989a237f6f03f20d35c0c63a818776d2cd071b0a084cffeba5')
     version('2.18.2', sha256='28007b5b584eaf9397f933032d8367788707a2d356d78e47b99e551ab10cc76a')
@@ -98,29 +99,42 @@ class Hypre(Package):
 
     def install(self, spec, prefix):
         # Note: --with-(lapack|blas)_libs= needs space separated list of names
-        lapack = spec['lapack'].libs
-        blas = spec['blas'].libs
+        lapack_libs = spec['lapack'].libs
+        blas_libs = spec['blas'].libs
 
         configure_args = [
             '--prefix=%s' % prefix,
-            '--with-lapack-libs=%s' % ' '.join(lapack.names),
-            '--with-lapack-lib-dirs=%s' % ' '.join(lapack.directories),
-            '--with-blas-libs=%s' % ' '.join(blas.names),
-            '--with-blas-lib-dirs=%s' % ' '.join(blas.directories)
+            '--with-lapack-libs=%s' % ' '.join(lapack_libs.names),
+            '--with-lapack-lib-dirs=%s' % ' '.join(lapack_libs.directories),
+            '--with-blas-libs=%s' % ' '.join(blas_libs.names),
+            '--with-blas-lib-dirs=%s' % ' '.join(blas_libs.directories)
         ]
 
         if '+mpi' in self.spec:
-            os.environ['CC'] = spec['mpi'].mpicc
-            os.environ['CXX'] = spec['mpi'].mpicxx
-            os.environ['F77'] = spec['mpi'].mpif77
+            configure_args.append('CC=%s' % spec['mpi'].mpicc)
+            configure_args.append('CXX=%s' % spec['mpi'].mpicxx)
+            configure_args.append('F77=%s' % spec['mpi'].mpif77)
             configure_args.append('--with-MPI')
         else:
+            configure_args.append('CC=%s' % spack_cc)
+            configure_args.append('CXX=%s' % spack_cxx)
+            configure_args.append('F77=%s' % spack_f77)
             configure_args.append('--without-MPI')
+
+        cflags = ' '.join(spec.compiler_flags['cflags'])
+        cxxflags = ' '.join(spec.compiler_flags['cxxflags'])
+        fflags = ' '.join(spec.compiler_flags['fflags'])
 
         if '+openmp' in self.spec:
             configure_args.append('--with-openmp')
+            cflags += ' ' + self.compiler.openmp_flag
+            configure_args.append('LDFLAGS=%s' % self.compiler.openmp_flag)
         else:
             configure_args.append('--without-openmp')
+            
+        configure_args.append('CFLAGS=%s' % cflags)
+        configure_args.append('CXXFLAGS=%s' % cxxflags)
+        configure_args.append('FCFLAGS=%s' % fflags)
 
         if '+int64' in self.spec:
             configure_args.append('--enable-bigint')

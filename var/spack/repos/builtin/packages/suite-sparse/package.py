@@ -14,6 +14,8 @@ class SuiteSparse(Package):
     url      = 'https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v4.5.3.tar.gz'
     git      = 'https://github.com/DrTimothyAldenDavis/SuiteSparse.git'
 
+    version('5.8.1', sha256='06726e471fbaa55f792578f9b4ab282ea9d008cf39ddcc3b42b73400acddef40')
+    version('5.8.0', sha256='94a9b7134eb4dd82b97f1a22a6b464feb81e73af2dcdf683c6f252285191df1d')
     version('5.7.2', sha256='fe3bc7c3bd1efdfa5cffffb5cebf021ff024c83b5daf0ab445429d3d741bd3ad')
     version('5.7.1', sha256='5ba5add1663d51a1b6fb128b50fe869b497f3096765ff7f8212f0ede044b9557')
     version('5.6.0', sha256='76d34d9f6dafc592b69af14f58c1dc59e24853dcd7c2e8f4c98ffa223f6a1adb')
@@ -32,6 +34,21 @@ class SuiteSparse(Package):
     variant('pic',  default=True,  description='Build position independent code (required to link with shared libraries)')
     variant('cuda', default=False, description='Build with CUDA')
     variant('openmp', default=False, description='Build with OpenMP')
+
+    variant('klu', default=False, description='Build KLU.')
+    variant('btf', default=False, description='Build BTF.')
+    variant('umfpack', default=False, description='Build UMFPACK.')
+    variant('cholmod', default=False, description='Build CHOLMOD.')
+    variant('colamd', default=False, description='Build COLAMD.')
+    variant('amd', default=False, description='Build AMD.')
+    variant('camd', default=False, description='Build CAMD.')
+    variant('ccolamd', default=False, description='Build CCOLAMD.')
+    variant('csparse', default=False, description='Build CSparse.')
+    variant('cxsparse', default=False, description='Build CXSparse.')
+    variant('rbio', default=False, description='Build RBio.')
+    variant('spqr', default=False, description='Build SPQR.')
+
+    variant('blas-no-underscore', default=False, description='Force no underscore for BLAS and LAPACK libs.')
 
     depends_on('blas')
     depends_on('lapack')
@@ -55,6 +72,12 @@ class SuiteSparse(Package):
     patch('graphblas_libm_dep.patch', when='@5.2.0:5.2.99%clang')
 
     conflicts('%gcc@:4.8', when='@5.2.0:', msg='gcc version must be at least 4.9 for suite-sparse@5.2.0:')
+    conflicts('+cholmod~amd', msg='CHOLMOD depends on AMD.')
+    conflicts('+cholmod~camd', msg='CHOLMOD depends on CAMD.')
+    conflicts('+cholmod~colamd', msg='CHOLMOD depends on COLAMD.')
+    conflicts('+cholmod~ccolamd', msg='CHOLMOD depends on CCOLAMD.')
+
+    conflicts('+umfpack~cholmod', msg='UMFPACK depends on cholmod')
 
     def install(self, spec, prefix):
         # The build system of SuiteSparse is quite old-fashioned.
@@ -120,7 +143,7 @@ class SuiteSparse(Package):
         elif '%pgi' in spec:
             make_args += ['CFLAGS+=--exceptions']
 
-        if spack_f77.endswith('xlf') or spack_f77.endswith('xlf_r'):
+        if '+blas-no-underscore' in spec or spack_f77.endswith('xlf') or spack_f77.endswith('xlf_r'):
             make_args += ['CFLAGS+=-DBLAS_NO_UNDERSCORE']
 
         # Intel TBB in SuiteSparseQR
@@ -138,14 +161,35 @@ class SuiteSparse(Package):
                 'CMAKE_OPTIONS=-DCMAKE_INSTALL_PREFIX=%s' % prefix +
                 ' -DCMAKE_LIBRARY_PATH=%s' % prefix.lib]
 
+        make_args.append('INSTALL=%s' % prefix)
+
+        libraries = (('SuiteSparse_config', True),
+                     ('SPQR', '+spqr' in spec),
+                     ('RBio', '+rbio' in spec),
+                     ('CSparse', '+csparse' in spec),
+                     ('CXSparse', '+cxsparse' in spec),
+                     ('CCOLAMD', '+ccolamd' in spec),
+                     ('CAMD', '+camd' in spec),
+                     ('AMD', '+amd' in spec),
+                     ('COLAMD', '+colamd' in spec),
+                     ('CHOLMOD', '+cholmod' in spec),
+                     ('UMFPACK', '+umfpack' in spec),
+                     ('BTF', '+btf' in spec),
+                     ('KLU', '+klu' in spec))
+
         # In those SuiteSparse versions calling "make install" in one go is
         # not possible, mainly because of GraphBLAS.  Thus compile first and
         # install in a second run.
-        if '@5.4.0:' in self.spec:
-            make('library', *make_args)
+        for directory, shouldBuild in libraries:
+            if shouldBuild:
+                with working_dir(directory):
+                    if '@5.4.0:' in self.spec:
+                        make('library', *make_args)
 
-        make_args.append('INSTALL=%s' % prefix)
-        make('install', *make_args)
+        for directory, shouldBuild in libraries:
+            if shouldBuild:
+                with working_dir(directory):
+                    make('install', *make_args)
 
     @property
     def libs(self):

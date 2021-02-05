@@ -81,6 +81,10 @@ class Trilinos(CMakePackage):
             description='Enable runtime safety and debug checks')
     variant('xsdkflags',    default=False,
             description='Compile using the default xSDK configuration')
+    variant('blas_lowercase_no_underscore', default=False,
+            description='Override the default F77_BLAS_MANGLE scheme.')
+    variant('force-new-lapack', default=False,
+            description='Override the auto detection of the LAPACK API.')
 
     # TPLs (alphabet order)
     variant('boost',        default=True,
@@ -434,6 +438,12 @@ class Trilinos(CMakePackage):
                 define('MPI_BASE_DIR', spec['mpi'].prefix),
             ])
 
+        if '+blas_lowercase_no_underscore' in spec:
+            options.extend([define('F77_BLAS_MANGLE', '(lcase,UCASE) lcase')])
+
+        if '+force-new-lapack' in spec:
+            options.extend([define('HAVE_dggsvd3', 'ON')])
+
         # ################## Trilinos Packages #####################
 
         options.extend([
@@ -540,6 +550,11 @@ class Trilinos(CMakePackage):
             define_tpl_enable('X11'),
             define_trilinos_enable('Gtest', 'gtest'),
         ])
+
+        if '^intel-mkl' in spec:
+            options.extend([define('TPL_ENABLE_MKL', True),
+                            define('TPL_MKL_INCLUDE_DIRS', spec['intel-mkl'].prefix.include),
+                            define('TPL_MKL_LIBRARIES', ';'.join(spec['intel-mkl'].libs))])
 
         options.append(define_tpl_enable('Netcdf'))
         if '+netcdf' in spec:
