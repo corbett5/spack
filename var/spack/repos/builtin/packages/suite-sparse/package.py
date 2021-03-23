@@ -50,8 +50,8 @@ class SuiteSparse(Package):
 
     variant('blas-no-underscore', default=False, description='Force no underscore for BLAS and LAPACK libs.')
 
-    depends_on('mpfr', type=('build', 'link'), when='@5.8.0:')
-    depends_on('gmp', type=('build', 'link'), when='@5.8.0:')
+    # depends_on('mpfr', type=('build', 'link'), when='@5.8.0:')
+    # depends_on('gmp', type=('build', 'link'), when='@5.8.0:')
     
     depends_on('blas')
     depends_on('lapack')
