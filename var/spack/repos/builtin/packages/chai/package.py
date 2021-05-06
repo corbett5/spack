@@ -30,7 +30,7 @@ class Chai(CMakePackage, CudaPackage, ROCmPackage):
     variant('enable_pick', default=False, description='Enable pick method')
     variant('shared', default=True, description='Build Shared Libs')
     variant('raja', default=False, description='Build plugin for RAJA')
-    variant('benchmarks', default=True, description='Build benchmarks.')
+    variant('benchmarks', default=False, description='Build benchmarks.')
     variant('examples', default=True, description='Build examples.')
     # TODO: figure out gtest dependency and then set this default True
     # and remove the +tests conflict below.
