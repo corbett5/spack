@@ -177,7 +177,7 @@ jobs:
           SPACK_TEST_SOLVER: ${{ matrix.concretizer }}
       run: |
           share/spack/qa/run-unit-tests
-    - uses: codecov/codecov-action@v1
+    - uses: codecov/codecov-action@v1.5.0
       if: ${{ needs.changes.outputs.with_coverage == 'true' }}
       with:
         flags: unittests,linux,${{ matrix.concretizer }}
@@ -229,7 +229,7 @@ jobs:
           COVERAGE: true
       run: |
           share/spack/qa/run-shell-tests
-    - uses: codecov/codecov-action@v1
+    - uses: codecov/codecov-action@v1.5.0
       if: ${{ needs.changes.outputs.with_coverage == 'true' }}
       with:
         flags: shelltests,linux
@@ -294,7 +294,7 @@ jobs:
           coverage run $(which spack) unit-test -v
           coverage combine
           coverage xml
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v1.5.0
         if: ${{ needs.changes.outputs.with_coverage == 'true' }}
         with:
           flags: unittests,linux,clingo
@@ -334,7 +334,7 @@ jobs:
           echo "ONLY PACKAGE RECIPES CHANGED [skipping coverage]"
           $(which spack) unit-test -x -m "not maybeslow"
         fi
-    - uses: codecov/codecov-action@v1
+    - uses: codecov/codecov-action@v1.5.0
       if: ${{ needs.changes.outputs.with_coverage == 'true' }}
       with:
         file: ./coverage.xml
