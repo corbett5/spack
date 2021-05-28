@@ -24,6 +24,7 @@ class Zfp(CMakePackage, CudaPackage):
 
     # Versions
     version('develop', branch='develop')
+    version('0.5.99', commit='fcae077d91c928ab6c989d32a2fb9dc2a64ae25b')
     version('0.5.5', sha256='fdf7b948bab1f4e5dccfe2c2048fd98c24e417ad8fb8a51ed3463d04147393c5')
     version('0.5.4', sha256='746e17aaa401c67dcffd273d6e6f95c76adfbbd5cf523dcad56d09e9d3b71196')
     version('0.5.3', sha256='a5d2f8e5b47a7c92e2a5775b82cbfb3a76c87d0ac83d25abb4ac10ea75a2856e')
@@ -98,7 +99,15 @@ class Zfp(CMakePackage, CudaPackage):
             self.define_from_variant('ZFP_WITH_ALIGNED_ALLOC', 'aligned'),
             self.define_from_variant('ZFP_WITH_CACHE_TWOWAY', 'twoway'),
             self.define_from_variant('ZFP_WITH_CACHE_FAST_HASH', 'fasthash'),
-            self.define_from_variant('ZFP_WITH_CACHE_PROFILE', 'profile')
+            self.define_from_variant('ZFP_WITH_CACHE_PROFILE', 'profile'),
+            self.define_from_variant('ZFP_WITH_CUDA', 'cuda')
         ]
+
+        if '+cuda' in spec:
+            args.append('-DCUDA_BIN_DIR={}'.format(spec['cuda'].prefix.bin))
+
+            if not spec.satisfies('cuda_arch=none'):
+                cuda_arch = spec.variants['cuda_arch'].value
+                args.append('-DCMAKE_CUDA_FLAGS=-arch sm_{}'.format(cuda_arch[0]))
 
         return args
